@@ -1,3 +1,4 @@
+#lang scheme
 ;; utility macros
 
 (require srfi/1)
@@ -25,6 +26,7 @@
   (read-stack get-read-stack set-read-stack!))
 
 (define (open-parse-stream file) (make-parse-stream file (open-input-file file) '(0)))
+(define (close-parse-stream stm) (close-input-port (get-in-port stm)))
 
 (define (get-next-char in) 
   (set-read-stack! in (cons (+ 1 (car (get-read-stack in))) (cdr (get-read-stack in))))
@@ -93,6 +95,8 @@
 
 ;; parser combinators
 
+(define (recv-pass expr) expr)
+
 (define (parse-context parser)
   (lambda (in) (call-with-parse-stack parser in)))
 
@@ -105,7 +109,7 @@
               ((apply parse-or (cdr parser)) in)))
         #f)))
 
-(define (parse-* parser)
+(define (parse-* recv parser)
   (letrec ((parser-loop (lambda (in)
                           (let ((out (call-with-parse-stack parser in)))
                             (if out
@@ -114,7 +118,7 @@
            (lambda (in) (let ((out (parser-loop in)))
                           (if (eq? out '())
                               #f
-                              out)))))
+                              (recv out))))))
 
 (define (parse-last . parser)
   (lambda (in)
@@ -125,7 +129,7 @@
               ((parse-last (cdr parser)) in))
           #f))))
 
-(define (parse-sequence . parser)
+(define (parse-sequence recv . parser)
   (lambda (in)
     (let ((ret
            (((rec-lambda (rec-call parser)
@@ -137,26 +141,24 @@
                                 ((rec-call (cdr parser)) in))))) parser) in)))
       (if (any not ret)
           #f
-          ret))))
+          (recv ret)))))
 
 ;; Additional parsers
 
-(define (parse-num in)
-  (let ((ret ((parse-sequence
-                                  (parse-* parse-num-char)
-                                  (lambda (in) (parse-a-char #\. in))
-                                  (parse-* parse-num-char)) in)))
-    (if ret 
-        (string->number (list->string (append (car ret) (list (cadr ret)) (caddr ret))))
-        #f)))
+(define parse-num
+  (parse-sequence (lambda (expr) 
+                    (string->number (list->string (append (car expr) (list (cadr expr)) (caddr expr)))))
+                  (parse-* recv-pass parse-num-char)
+                  (lambda (in) (parse-a-char #\. in))
+                  (parse-* recv-pass parse-num-char)))
 
 (define (parse-int in)
-  (let ((ret ((parse-* parse-num-char) in)))
+  (let ((ret ((parse-* recv-pass parse-num-char) in)))
     (if ret
         (string->number (list->string ret))
         #f)))
 
-(define parse-eat-whitespace (parse-* parse-whitespace))
+(define parse-eat-whitespace (parse-* (lambda (expr) 'whitespace) parse-whitespace))
 (define parse-space parse-eat-whitespace)
 
 ;; pcl parser
@@ -169,15 +171,9 @@
   (y get-line-y set-line-y!)
   (len get-line-len set-line-len!))
 
-(define parse-space-num (parse-last parse-eat-whitespace parse-num))
-
-;(define (parse-a-line str sym in) 
-;  (parse-eat-whitespace in)
-;  (parse-str str in)
-;  (make-line sym (parse-space-num in) (parse-space-num in) (parse-space-num in)))
-
-(define (parse-a-line str)
+(define (parse-a-line typ str)
     (parse-sequence
+     (lambda (expr) (make-line typ (caddr expr) (caddr (cddr expr)) (caddr (cddddr expr))))
      (lambda (in) (parse-str str in))
      parse-space
      parse-num
@@ -187,16 +183,20 @@
      parse-num))
 
 (define parse-line (parse-or
-                    (parse-a-line "hlin")
-                    (parse-a-line "vlin")))
+                    (parse-a-line 'hline "hlin")
+                    (parse-a-line 'vline "vlin")))
 
-(define parse-command (parse-or
-                       parse-line))
-;                       parse-box
+(define parse-command (parse-sequence
+                       (lambda (expr) (car expr))
+                       (parse-or
+                        parse-line)
+                       parse-space))
+  ;                     parse-box
 ;                       parse-font
 ;                       parse-text))
 
-(define parse-pcl (parse-* parse-command))
+(define parse-pcl (parse-* recv-pass parse-command))
 
 (define test-in (open-parse-stream "test.pcl"))
 (call-with-parse-stack parse-pcl test-in)
+(close-parse-stream test-in)
