@@ -1,5 +1,6 @@
 ;; utility macros
 
+(require srfi/1)
 (require srfi/9)
 
 ;;(require-extension riaxpander)
@@ -71,12 +72,9 @@
                                      #f)))
 
 (define (parse-any-char chars in)
-  (if (null? chars)
-      #f
-      (let ((out (parse-a-char (car chars) in)))
-        (if out
-            out
-            (parse-any-char (cdr chars) in)))))
+  (let* ((r (parse-char in)))
+    (find (lambda (c) (eq? c r)) chars)))
+    
 
 (define (parse-whitespace in)
   (parse-any-char '(#\space #\tab #\newline) in))
@@ -101,7 +99,7 @@
 (define (parse-or . parser)
   (lambda (in)
     (if (not (null? parser))
-        (let ((out (parse-context ((car parser) in))))
+        (let ((out (call-with-parse-stack (car parser) in)))
           (if out
               out
               ((apply parse-or (cdr parser)) in)))
@@ -129,23 +127,27 @@
 
 (define (parse-sequence . parser)
   (lambda (in)
-    (let* ((out ((car parser) in))
-          (ret (if (and out (cdr parser))
-               ((parse-sequence (cdr parser)) in)
-               #f)))
-      (if (and (cdr parser) (not ret))
+    (let ((ret
+           (((rec-lambda (rec-call parser)
+                         (lambda (in)
+                           (if (null? parser)
+                               '()
+                               (cons
+                                ((car parser) in)
+                                ((rec-call (cdr parser)) in))))) parser) in)))
+      (if (any not ret)
           #f
-          (cons out ret)))))
+          ret))))
 
 ;; Additional parsers
 
 (define (parse-num in)
   (let ((ret ((parse-sequence
                                   (parse-* parse-num-char)
-                                  (lambda (in) (parse-a-char #\.))
+                                  (lambda (in) (parse-a-char #\. in))
                                   (parse-* parse-num-char)) in)))
     (if ret 
-        (string->number (list->string ret))
+        (string->number (list->string (append (car ret) (list (cadr ret)) (caddr ret))))
         #f)))
 
 (define (parse-int in)
@@ -155,6 +157,7 @@
         #f)))
 
 (define parse-eat-whitespace (parse-* parse-whitespace))
+(define parse-space parse-eat-whitespace)
 
 ;; pcl parser
 
@@ -168,27 +171,32 @@
 
 (define parse-space-num (parse-last parse-eat-whitespace parse-num))
 
-(define (parse-a-line str sym in) 
-  (parse-eat-whitespace in)
-  (parse-istring str)
-  (make-line sym (parse-space-num in) (parse-space-num parse-num in) (parse-space-num in)))
+;(define (parse-a-line str sym in) 
+;  (parse-eat-whitespace in)
+;  (parse-str str in)
+;  (make-line sym (parse-space-num in) (parse-space-num in) (parse-space-num in)))
 
-(define (parse-line in) (parse-or
-                         (lambda (in) (parse-a-line "hlin" 'hline in))
-                         (lambda (in) (parse-a-line "vlin" 'vline in))))
+(define (parse-a-line str)
+    (parse-sequence
+     (lambda (in) (parse-str str in))
+     parse-space
+     parse-num
+     parse-space
+     parse-num
+     parse-space
+     parse-num))
 
-(define (parse-command) (parse-or
-                            parse-line
-                            parse-box
-                            parse-font
-                            parse-text))
+(define parse-line (parse-or
+                    (parse-a-line "hlin")
+                    (parse-a-line "vlin")))
 
-(define (parse-pcl) (parse-* parse-command))
+(define parse-command (parse-or
+                       parse-line))
+;                       parse-box
+;                       parse-font
+;                       parse-text))
+
+(define parse-pcl (parse-* parse-command))
 
 (define test-in (open-parse-stream "test.pcl"))
-(call-with-parse-stack (lambda (in) (parse-str "tesj" in)) test-in)
-(call-with-parse-stack (lambda (in) (parse-str "test" in)) test-in)
-(call-with-parse-stack (lambda (in) (parse-str "test" in)) test-in)
-(parse-eat-whitespace test-in)
-(call-with-parse-stack (lambda (in) (parse-whitespace in)) test-in)
-(call-with-parse-stack parse-num test-in)
+(call-with-parse-stack parse-pcl test-in)
