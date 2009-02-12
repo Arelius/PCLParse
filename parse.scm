@@ -68,10 +68,13 @@
 (define (parse-success in) #t)
 
 (define (parse-char in) (get-next-char in))
-(define (parse-a-char char in) (let ((c (parse-char in)))
-                                 (if (eq? c char)
-                                     c
-                                     #f)))
+(define (parse-a-char char) (lambda (in)
+                              (let ((c (parse-char in)))
+                                (if (eq? c char)
+                                    c
+                                    #f))))
+
+(define (parse-eof in) (eof-object? (parse-char in)))
 
 (define (parse-any-char chars in)
   (let* ((r (parse-char in)))
@@ -79,16 +82,17 @@
     
 
 (define (parse-whitespace in)
-  (parse-any-char '(#\space #\tab #\newline) in))
+  (parse-any-char '(#\space #\tab #\newline #\return) in))
 
-(define (parse-str str in)
-  (if (eq? (string-length str) 0)
-      #t
-      (if (parse-a-char (string-ref str 0) in)
-          (if (parse-str (substring str 1 (string-length str)) in)
-              str
-              #f)
-          #f)))
+(define (parse-str str)
+  (lambda (in)
+    (if (eq? (string-length str) 0)
+        #t
+        (if ((parse-a-char (string-ref str 0)) in)
+            (if ((parse-str (substring str 1 (string-length str))) in)
+                str
+                #f)
+            #f))))
 
 (define (parse-num-char in)
   (parse-any-char (string->list "0123456789") in))
@@ -149,7 +153,7 @@
   (parse-sequence (lambda (expr) 
                     (string->number (list->string (append (car expr) (list (cadr expr)) (caddr expr)))))
                   (parse-* recv-pass parse-num-char)
-                  (lambda (in) (parse-a-char #\. in))
+                  (parse-a-char #\.)
                   (parse-* recv-pass parse-num-char)))
 
 (define (parse-int in)
@@ -171,26 +175,40 @@
   (y get-line-y set-line-y!)
   (len get-line-len set-line-len!))
 
+(define-record-type line-width
+  (make-line-width width)
+  line-width?
+  (width get-line-width))
+
 (define (parse-a-line typ str)
-    (parse-sequence
-     (lambda (expr) (make-line typ (caddr expr) (caddr (cddr expr)) (caddr (cddddr expr))))
-     (lambda (in) (parse-str str in))
-     parse-space
-     parse-num
-     parse-space
-     parse-num
-     parse-space
-     parse-num))
+  (parse-sequence
+   (lambda (expr) (make-line typ (caddr expr) (caddr (cddr expr)) (caddr (cddddr expr))))
+   (parse-str str)
+   parse-space
+   parse-num
+   parse-space
+   parse-num
+   parse-space
+   parse-num))
 
 (define parse-line (parse-or
                     (parse-a-line 'hline "hlin")
                     (parse-a-line 'vline "vlin")))
 
+(define parse-lwid (parse-sequence
+                    (lambda (expr) (make-line-width (caddr expr)))
+                    (parse-str "lwid")
+                    parse-space
+                    parse-int))
+
 (define parse-command (parse-sequence
                        (lambda (expr) (car expr))
                        (parse-or
-                        parse-line)
-                       parse-space))
+                        parse-line
+                        parse-lwid)
+                       (parse-or
+                        parse-space
+                        parse-eof)))
   ;                     parse-box
 ;                       parse-font
 ;                       parse-text))
