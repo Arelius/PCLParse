@@ -99,7 +99,7 @@
 
 ;; parser combinators
 
-(define (recv-pass expr) expr)
+(define (recv-pass . expr) expr)
 
 (define (parse-context parser)
   (lambda (in) (call-with-parse-stack parser in)))
@@ -122,7 +122,7 @@
            (lambda (in) (let ((out (parser-loop in)))
                           (if (eq? out '())
                               #f
-                              (recv out))))))
+                              (apply recv out))))))
 
 (define (parse-last . parser)
   (lambda (in)
@@ -145,12 +145,12 @@
                                 ((rec-call (cdr parser)) in))))) parser) in)))
       (if (any not ret)
           #f
-          (recv ret)))))
+          (apply recv ret)))))
 
 ;; Additional parsers
 
 (define parse-num
-  (parse-sequence (lambda (expr) 
+  (parse-sequence (lambda (. expr) 
                     (string->number (list->string (append (car expr) (list (cadr expr)) (caddr expr)))))
                   (parse-* recv-pass parse-num-char)
                   (parse-a-char #\.)
@@ -162,7 +162,7 @@
         (string->number (list->string ret))
         #f)))
 
-(define parse-eat-whitespace (parse-* (lambda (expr) 'whitespace) parse-whitespace))
+(define parse-eat-whitespace (parse-* (lambda ( . expr) 'whitespace) parse-whitespace))
 (define parse-space parse-eat-whitespace)
 
 ;; pcl parser
@@ -182,7 +182,7 @@
 
 (define (parse-a-line typ str)
   (parse-sequence
-   (lambda (expr) (make-line typ (caddr expr) (caddr (cddr expr)) (caddr (cddddr expr))))
+   (lambda (str spc1 x spc2 y spc3 len) (make-line typ x y len))
    (parse-str str)
    parse-space
    parse-num
@@ -196,7 +196,7 @@
                     (parse-a-line 'vline "vlin")))
 
 (define parse-lwid (parse-sequence
-                    (lambda (expr) (make-line-width (caddr expr)))
+                    (lambda (lwid spc width) (make-line-width width))
                     (parse-str "lwid")
                     parse-space
                     parse-int))
