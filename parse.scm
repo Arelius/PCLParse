@@ -35,16 +35,23 @@
 (define (push-stream-frame! in)
   (set-read-stack! in (cons (car (get-read-stack in)) (get-read-stack in))))
 
+;(define (discard-stream-frame! in)
+;  (set-read-stack! in (cdr (get-read-stack in)))
+;  (close-input-port (get-in-port in))
+;  (set-in-port! in (open-input-file (parse-stream-get-file in)))
+;  ((rec-lambda (rec-call i)
+;              (if (eq? (car (get-read-stack in)) i)
+;                  #f
+;                  (begin
+;                    (read-char (get-in-port in))
+;                    (rec-call (+ i 1))))) 0))
+
+; PLT Supports file-position
+; HUGE speed boost!
+
 (define (discard-stream-frame! in)
   (set-read-stack! in (cdr (get-read-stack in)))
-  (close-input-port (get-in-port in))
-  (set-in-port! in (open-input-file (parse-stream-get-file in)))
-  ((rec-lambda (rec-call i)
-              (if (eq? (car (get-read-stack in)) i)
-                  #f
-                  (begin
-                    (read-char (get-in-port in))
-                    (rec-call (+ i 1))))) 0))
+  (file-position (get-in-port in) (car (get-read-stack in))))
 
 
 (define (merge-stream-frame! in)
@@ -199,6 +206,21 @@
   font?
   (font-str get-font-str))
 
+(define-record-type text
+  (make-text x y str)
+  text?
+  (x text-get-x)
+  (y text-get-y)
+  (str text-get-str))
+
+(define-record-type box
+  (make-box x1 y1 x2 y2)
+  box?
+  (x1 box-get-x1)
+  (y1 box-get-y1)
+  (x2 box-get-x2)
+  (y2 box-get-y2))
+
 (define (parse-a-line typ str)
   (parse-sequence
    (lambda (str spc1 x spc2 y spc3 len) (make-line typ x y len))
@@ -226,20 +248,49 @@
                     parse-space
                     (parse-not
                      parse-space)))
+
+(define parse-text (parse-sequence
+                    (lambda (text spc1 x spc2 y spc3 str) (make-text x y str))
+                    (parse-str "text")
+                    parse-space
+                    parse-num
+                    parse-space
+                    parse-num
+                    parse-space
+                    (parse-not (parse-or
+                                parse-eof
+                                (parse-a-char #\return)
+                                (parse-a-char #\newline)))))
+
+(define parse-box (parse-sequence
+                   recv-pass
+                   (parse-str "box")
+                   parse-space
+                   parse-num
+                   parse-space
+                   parse-num
+                   parse-space
+                   parse-num
+                   parse-space
+                   parse-num))
                      
+(define parse-line-num 0)
 
 (define parse-command (parse-sequence
-                       (lambda (front space) front)
+                       (lambda (front space) 
+                         (set! parse-line-num (+ parse-line-num 1))
+                         (display parse-line-num)
+                         (display front) (newline) front)
                        (parse-or
                         parse-line
+                        parse-box
                         parse-lwid
-                        parse-font)
+                        parse-font
+                        parse-text)
                        (parse-or
                         parse-space
                         parse-eof)))
-  ;                     parse-box
-;                       parse-font
-;                       parse-text))
+
 
 (define parse-pcl (parse-* recv-pass parse-command))
 
@@ -252,5 +303,5 @@
                                   '()))
 
 (define test-in (open-parse-stream "test.pcl"))
-(display-fonts (call-with-parse-stack parse-pcl test-in))
+(call-with-parse-stack parse-pcl test-in)
 (close-parse-stream test-in)
