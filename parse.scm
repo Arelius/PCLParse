@@ -62,6 +62,12 @@
           (discard-stream-frame! in)
           out))))
 
+(define (call-with-abort-parse-stack parser in)
+  (push-stream-frame! in)
+  (let ((out (parser in)))
+    (discard-stream-frame! in)
+    out))
+
 ;; primitive parsers
 
 (define (parse-fail in) #f)
@@ -124,6 +130,14 @@
                               #f
                               (apply recv out))))))
 
+(define (parse-not parser)
+  (lambda (in) (list->string
+                ((rec-lambda (rec-call in)
+                             (if (not (call-with-abort-parse-stack parser in))
+                                 (cons (parse-char in) (rec-call in))
+                                 '())) in))))
+           
+
 (define (parse-last . parser)
   (lambda (in)
     (let ((out ((car parser) in)))
@@ -150,7 +164,7 @@
 ;; Additional parsers
 
 (define parse-num
-  (parse-sequence (lambda (. expr) 
+  (parse-sequence (lambda expr
                     (string->number (list->string (append (car expr) (list (cadr expr)) (caddr expr)))))
                   (parse-* recv-pass parse-num-char)
                   (parse-a-char #\.)
@@ -162,7 +176,7 @@
         (string->number (list->string ret))
         #f)))
 
-(define parse-eat-whitespace (parse-* (lambda ( . expr) 'whitespace) parse-whitespace))
+(define parse-eat-whitespace (parse-* (lambda expr 'whitespace) parse-whitespace))
 (define parse-space parse-eat-whitespace)
 
 ;; pcl parser
@@ -179,6 +193,11 @@
   (make-line-width width)
   line-width?
   (width get-line-width))
+
+(define-record-type font
+  (make-font font-str)
+  font?
+  (font-str get-font-str))
 
 (define (parse-a-line typ str)
   (parse-sequence
@@ -201,11 +220,20 @@
                     parse-space
                     parse-int))
 
+(define parse-font (parse-sequence
+                    (lambda (font spc str) (make-font str))
+                    (parse-str "font")
+                    parse-space
+                    (parse-not
+                     parse-space)))
+                     
+
 (define parse-command (parse-sequence
-                       (lambda (expr) (car expr))
+                       (lambda (front space) front)
                        (parse-or
                         parse-line
-                        parse-lwid)
+                        parse-lwid
+                        parse-font)
                        (parse-or
                         parse-space
                         parse-eof)))
@@ -215,6 +243,14 @@
 
 (define parse-pcl (parse-* recv-pass parse-command))
 
+(define (display-fonts lst) (if (pair? lst)
+                                  (begin
+                                    (if (font? (car lst))
+                                        (display (get-font-str (car lst)))
+                                        '())
+                                    (display-fonts (cdr lst)))
+                                  '()))
+
 (define test-in (open-parse-stream "test.pcl"))
-(call-with-parse-stack parse-pcl test-in)
+(display-fonts (call-with-parse-stack parse-pcl test-in))
 (close-parse-stream test-in)
