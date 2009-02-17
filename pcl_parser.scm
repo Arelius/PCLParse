@@ -78,6 +78,8 @@
 
 (define parse-pcl (parse-* recv-pass parse-command))
 
-(define test-in (open-parse-stream "test.pcl"))
-(define test-stream (call-with-parse-stack parse-pcl test-in))
-(close-parse-stream test-in)
+(define (parse-pcl-file file)
+  (let* ((pcl-in (open-parse-stream file))
+         (pcl-stream (call-with-parse-stack parse-pcl pcl-in)))
+    (close-parse-stream pcl-in)
+    pcl-stream))
