@@ -1,6 +1,9 @@
 #lang scheme
 ;; utility macros
 
+(provide 
+ (all-defined-out))
+
 (require srfi/1)
 (require srfi/9)
 
@@ -247,7 +250,9 @@
                     (parse-str "font")
                     parse-space
                     (parse-not
-                     parse-space)))
+                     (parse-or
+                     parse-space
+                     parse-eof))))
 
 (define parse-text (parse-sequence
                     (lambda (text spc1 x spc2 y spc3 str) (make-text x y str))
@@ -263,7 +268,7 @@
                                 (parse-a-char #\newline)))))
 
 (define parse-box (parse-sequence
-                   recv-pass
+                   (lambda (box spc1 x1 spc2 y1 spc3 x2 spc4 y2) (make-box x1 y1 x2 y2))
                    (parse-str "box")
                    parse-space
                    parse-num
@@ -273,14 +278,9 @@
                    parse-num
                    parse-space
                    parse-num))
-                     
-(define parse-line-num 0)
 
 (define parse-command (parse-sequence
-                       (lambda (front space) 
-                         (set! parse-line-num (+ parse-line-num 1))
-                         (display parse-line-num)
-                         (display front) (newline) front)
+                       (lambda (front space) front)
                        (parse-or
                         parse-line
                         parse-box
@@ -303,5 +303,5 @@
                                   '()))
 
 (define test-in (open-parse-stream "test.pcl"))
-(call-with-parse-stack parse-pcl test-in)
+(define test-stream (call-with-parse-stack parse-pcl test-in))
 (close-parse-stream test-in)
