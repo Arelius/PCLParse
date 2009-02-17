@@ -1,6 +1,7 @@
 #lang scheme/gui
 
-(require "parse.scm")
+(require "pcl_parser.scm")
+(require "pcl_types.scm")
 
 (define pcl-stream test-stream)
 
