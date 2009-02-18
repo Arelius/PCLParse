@@ -9,5 +9,5 @@
 
 (define transformed-pcl-stream (transform-pcl-list pcl-stream))
 
-(write-pcl transformed-pcl-stream (current-output-port))
-;(call-with-output-file "testout.pcl" (lambda (port) (write-pcl transformed-pcl-stream port)))
+;(write-pcl transformed-pcl-stream (current-output-port))
+(call-with-output-file "testout.pcl" (lambda (port) (write-pcl transformed-pcl-stream port)))

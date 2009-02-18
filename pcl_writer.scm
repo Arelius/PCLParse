@@ -83,7 +83,7 @@
       '()
       (cons
        (if (number? (car lst))
-           (number->string (car lst))
+           (number->string (/ (round (* (car lst) 1000)) 1000))
            (car lst))
        (primv-list-truncate-numbers (cdr lst)))))
             

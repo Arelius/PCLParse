@@ -2,6 +2,7 @@
 
 (require "pcl_types.scm")
 (require srfi/1)
+(require srfi/32)
 
 (provide (all-defined-out))
 
@@ -40,8 +41,50 @@
 (define (unnest-pcl-list lst)
   (concatenate (concatenate lst)))
 
+;; List transformers
+
 (define transform-func-list (list (lambda (x) x)))
-(define nest-transform-func-list (list (lambda (x) x)))
+
+;; Nested list transformers.
+
+(define (nest-transform-sort lst)
+  (map
+   (lambda (lst)
+     (sort lst (lambda (l r) (pcl<? (car l) (car r)))))
+   lst))
+
+(define (nest-transform-merge-similar lst)
+  (map
+   (letrec
+       ([merge-s (lambda (mlst)
+                   (if (null? mlst)
+                       '()
+                       (let ([l (car mlst)]
+                             [r (merge-s (cdr mlst))])
+                         (if (and (not (null? r)) (pcl=? (car l) (caar r)))
+                             (cons (append l (cdar r)) (cdr r))
+                             (cons l r)))))])
+      merge-s)
+   lst))
+
+(define (nest-transform-remove-empty lst)
+  (map
+   (lambda (lst)
+     (remove (lambda (x) (null? (cdr x))) lst))
+   lst))
+
+(define (nest-transform-sub-sort lst)
+  (map
+   (lambda (lst)
+     (map
+      (lambda (lst)
+        (cons
+         (car lst)
+         (sort (cdr lst) pcl<?)))
+      lst))
+   lst))
+
+(define nest-transform-func-list (list nest-transform-sub-sort nest-transform-remove-empty nest-transform-merge-similar nest-transform-sort))
 
 
 (define (transform-pcl-list lst)
