@@ -35,7 +35,7 @@
                     parse-space
                     (parse-not
                      (parse-or
-                     parse-space
+                     parse-eat-space-line
                      parse-eof))))
 
 (define parse-text (parse-sequence
@@ -72,7 +72,7 @@
                         parse-font
                         parse-text)
                        (parse-or
-                        parse-space
+                        parse-eat-space-line
                         parse-eof)))
 
 

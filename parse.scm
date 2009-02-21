@@ -98,7 +98,10 @@
     
 
 (define (parse-whitespace in)
-  (parse-any-char '(#\space #\tab #\newline #\return) in))
+  (parse-any-char '(#\space #\tab) in))
+
+(define (parse-newline in)
+  (parse-any-char '(#\newline #\return) in))
 
 (define (parse-str str)
   (lambda (in)
@@ -187,4 +190,5 @@
         #f)))
 
 (define parse-eat-whitespace (parse-* (lambda expr 'whitespace) parse-whitespace))
+(define parse-eat-space-line (parse-* (lambda expr 'whitespace) (parse-or parse-whitespace parse-newline)))
 (define parse-space parse-eat-whitespace)
