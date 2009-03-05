@@ -32,7 +32,15 @@
       (box-get-x1 pcl-type)
       (box-get-y1 pcl-type)
       (box-get-x2 pcl-type)
-      (box-get-y2 pcl-type)))))
+      (box-get-y2 pcl-type)))
+    ((shade? pcl-type)
+     (list
+      "shade"
+      (shade-get-x1 pcl-type)
+      (shade-get-y1 pcl-type)
+      (shade-get-x2 pcl-type)
+      (shade-get-y2 pcl-type)
+      (shade-get-depth pcl-type)))))
 
 (define (pcl-list->primitive-list-list pcl-list)
   (if (not (null? pcl-list))

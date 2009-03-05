@@ -38,8 +38,18 @@
   (x2 box-get-x2)
   (y2 box-get-y2))
 
+(define-record-type shade
+  (make-shade x1 y1 x2 y2 d)
+  shade?
+  (x1 shade-get-x1)
+  (y1 shade-get-y1)
+  (x2 shade-get-x2)
+  (y2 shade-get-y2)
+  (d shade-get-depth))
+   
+
 (define (pcl-coord-obj? x)
-  (or (line? x) (box? x) (text? x)))
+  (or (line? x) (box? x) (shade? x) (text? x)))
 
 (define (pcl-obj-x x)
   (cond
@@ -47,6 +57,8 @@
      (get-line-x x))
     ((box? x)
      (box-get-x1 x))
+    ((shade? x)
+     (shade-get-x1 x))
     ((text? x)
      (text-get-x x))))
 
@@ -56,6 +68,8 @@
      (get-line-y x))
     ((box? x)
      (box-get-y1 x))
+    ((shade? x)
+     (shade-get-y1 x))
     ((text? x)
      (text-get-y x))))
 

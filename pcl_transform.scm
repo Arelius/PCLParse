@@ -8,7 +8,7 @@
 
 (define (true? x) x)
 
-(define nest-tree (list (list line-width? line? box?) (list font? text?)))
+(define nest-tree (list (list line-width? line? box? shade?) (list font? text?)))
 
 (define (extract-state-nest state lst)
   (if (null? lst)
@@ -43,7 +43,12 @@
 
 ;; List transformers
 
-(define transform-func-list (list (lambda (x) x)))
+(define (transform-remove-empty-text lst)
+  (remove (lambda (elm)
+            (and (text? elm) (eq? (string-length (text-get-str elm)) 0)))
+          lst))
+
+(define transform-func-list (list transform-remove-empty-text))
 
 ;; Nested list transformers.
 

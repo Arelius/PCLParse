@@ -63,11 +63,27 @@
                    parse-space
                    parse-num))
 
+(define parse-shade (parse-sequence
+                     (lambda (shade spc1 x1 spc2 y1 spc3 x2 spc4 y2 spc5 depth) (make-shade x1 y1 x2 y2 depth))
+                     (parse-str "shade")
+                     parse-space
+                     parse-num
+                     parse-space
+                     parse-num
+                     parse-space
+                     parse-num
+                     parse-space
+                     parse-num
+                     parse-space
+                     parse-int))
+                      
+
 (define parse-command (parse-sequence
                        (lambda (front space) front)
                        (parse-or
                         parse-line
                         parse-box
+                        parse-shade
                         parse-lwid
                         parse-font
                         parse-text)

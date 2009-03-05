@@ -31,9 +31,14 @@
 (define (open-parse-stream file) (make-parse-stream file (open-input-file file) '(0)))
 (define (close-parse-stream stm) (close-input-port (get-in-port stm)))
 
+;; trying a read-byte instead of read-char read-char seems to do weird stuff with extended ascii.
+
 (define (get-next-char in) 
   (set-read-stack! in (cons (+ 1 (car (get-read-stack in))) (cdr (get-read-stack in))))
-  (read-char (get-in-port in)))
+  (let ((b (read-byte (get-in-port in))))
+    (if (integer? b)
+        (integer->char b)
+        b)))
 
 (define (push-stream-frame! in)
   (set-read-stack! in (cons (car (get-read-stack in)) (get-read-stack in))))
