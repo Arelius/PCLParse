@@ -1,8 +1,5 @@
-#lang scheme
-
-(require "pcl_types.scm")
-
-(provide (all-defined-out))
+(declare (unit pcl_writer)
+         (uses pcl_types))
 
 (define (pcl-type->primitive-list pcl-type)
   (cond

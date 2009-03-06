@@ -1,7 +1,5 @@
-#lang scheme
-
-(provide (all-defined-out))
-(require srfi/9)
+(declare (unit pcl_types))
+(require-extension srfi-9)
 
 ;; pcl types
 

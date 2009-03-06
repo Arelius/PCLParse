@@ -1,13 +1,11 @@
-#lang scheme
 ;; utility macros
 
-(provide 
- (all-defined-out))
+(declare (unit parse))
 
-(require srfi/1)
-(require srfi/9)
-
-;;(require-extension riaxpander)
+(require-extension srfi-1)
+(require-extension srfi-9)
+(require-extension riaxpander)
+(require-extension posix)
 
 (define-syntax while
   (syntax-rules ()
@@ -35,7 +33,7 @@
 
 (define (get-next-char in) 
   (set-read-stack! in (cons (+ 1 (car (get-read-stack in))) (cdr (get-read-stack in))))
-  (let ((b (read-byte (get-in-port in))))
+  (let ((b (read-char (get-in-port in))))
     (if (integer? b)
         (integer->char b)
         b)))
@@ -59,7 +57,7 @@
 
 (define (discard-stream-frame! in)
   (set-read-stack! in (cdr (get-read-stack in)))
-  (file-position (get-in-port in) (car (get-read-stack in))))
+  (set-file-position! (get-in-port in) (car (get-read-stack in))))
 
 
 (define (merge-stream-frame! in)

@@ -1,10 +1,7 @@
-#lang scheme
+(require-extension srfi-9)
 
-(require "parse.scm")
-(require "pcl_types.scm")
-(require srfi/9)
-
-(provide (all-defined-out))
+(declare (unit pcl_parser)
+         (uses parse pcl_types))
 
 ;; pcl parser
 
