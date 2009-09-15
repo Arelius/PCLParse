@@ -4,7 +4,6 @@
 
 (require-extension srfi-1)
 (require-extension srfi-9)
-(require-extension riaxpander)
 (require-extension posix)
 
 (define-syntax while
