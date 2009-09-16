@@ -71,32 +71,7 @@
       merge-s)
    lst))
 
-(define (nest-transform-merge-overlapping lst)
-  (map
-   (lambda (lst)
-     (map
-      (lambda (lst)
-        (letrec
-            ((merge-o
-              (lambda (l r)
-                (if (null? r)
-                    '()
-                    (let ((pruned-r
-                           (if (pcl-discard? l (car r))
-                               (merge-o l (cdr r))
-                               (cons
-                                r
-                                (merge-o l (cdr r))))))
-                      (cons l
-                            (if (null? pruned-r)
-                                '()
-                                (merge-o
-                                 (car pruned-r)
-                                 (cdr pruned-r)))))))))
-          (merge-o (car lst) (cdr lst))))
-      lst))
-   lst))
-
+;; This actually requires lines to be sorted longest to shortest, which isn't currentlly done.
 (define (nest-transform-merge-overlapping! lst)
   (map
    (lambda (lst)
