@@ -71,6 +71,55 @@
       merge-s)
    lst))
 
+(define (nest-transform-merge-overlapping lst)
+  (map
+   (lambda (lst)
+     (map
+      (lambda (lst)
+        (letrec
+            ((merge-o
+              (lambda (l r)
+                (if (null? r)
+                    '()
+                    (let ((pruned-r
+                           (if (pcl-discard? l (car r))
+                               (merge-o l (cdr r))
+                               (cons
+                                r
+                                (merge-o l (cdr r))))))
+                      (cons l
+                            (if (null? pruned-r)
+                                '()
+                                (merge-o
+                                 (car pruned-r)
+                                 (cdr pruned-r)))))))))
+          (merge-o (car lst) (cdr lst))))
+      lst))
+   lst))
+
+(define (nest-transform-merge-overlapping! lst)
+  (map
+   (lambda (lst)
+     (map
+      (lambda (lst)
+        (letrec
+            ((merge-o
+              (lambda (l st)
+                (if (null? (cdr st))
+                    (if (null? (cdr l))
+                        '()
+                        (merge-o (cdr l) (cdr l)))
+                    (if (pcl-discard? (car l) (cadr st))
+                        (begin
+                          (set-cdr! st (cddr st))
+                          (merge-o l st))
+                        (merge-o l (cdr st)))))))
+          (merge-o lst lst)
+          lst)
+        )
+      lst))
+   lst))
+
 (define (nest-transform-remove-empty lst)
   (map
    (lambda (lst)
@@ -88,7 +137,7 @@
       lst))
    lst))
 
-(define nest-transform-func-list (list nest-transform-sub-sort nest-transform-remove-empty nest-transform-merge-similar nest-transform-sort))
+(define nest-transform-func-list (list nest-transform-merge-overlapping! nest-transform-sub-sort nest-transform-remove-empty nest-transform-merge-similar nest-transform-sort))
 
 
 (define (transform-pcl-list lst)

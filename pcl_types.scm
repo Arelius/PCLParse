@@ -83,7 +83,7 @@
        (if (= lx rx)
            (< (pcl-obj-y l) (pcl-obj-y r))
            (< lx rx))))
-    (else (error (string-append "Comparing two incompatable pcl types:" l " " r ".")))))
+    (else (error (string-append "Comparing two incompatable pcl types:" (->string l) " " (->string r) ".")))))
 
 (define (pcl=? l r)
   (cond
@@ -91,4 +91,17 @@
      (eq? (get-line-width l) (get-line-width r)))
     ((and (font? l) (font? r))
      (equal? (get-font-str l) (get-font-str r)))
-    (else (error (string-append "Comparing two incompatable pcl types:" l " " r ".")))))
+    (else (error (string-append "Comparing two incompatable pcl types:" (->string l) " " (->string r) ".")))))
+
+(define (pcl-discard? l r)
+  (and
+   (line? l)
+   (line? r)
+   (= (get-line-x l)
+      (get-line-x r))
+   (= (get-line-y l)
+      (get-line-y r))
+   (eq? (get-line-type l)
+        (get-line-type r))
+   (>= (get-line-len l)
+      (get-line-len r))))
