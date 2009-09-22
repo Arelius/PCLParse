@@ -78,11 +78,11 @@
     ((and (font? l) (font? r))
      (string<? (get-font-str l) (get-font-str r)))
     ((and (pcl-coord-obj? l) (pcl-coord-obj? r))
-     (let ([lx (pcl-obj-x l)]
-           [rx (pcl-obj-x r)])
-       (if (= lx rx)
-           (< (pcl-obj-y l) (pcl-obj-y r))
-           (< lx rx))))
+     (let ((ly (pcl-obj-y l))
+           (ry (pcl-obj-y r)))
+       (if (= ly ry)
+           (< (pcl-obj-x l) (pcl-obj-x r))
+           (< ly ry))))
     (else (error (string-append "Comparing two incompatable pcl types:" (->string l) " " (->string r) ".")))))
 
 (define (pcl=? l r)
