@@ -92,6 +92,13 @@
                                     c
                                     #f))))
 
+(define (parse-char-func func)
+  (lambda (in)
+    (let ((c (parse-char in)))
+      (if (func c)
+          c
+          #f))))
+
 (define (parse-eof in) (eof-object? (parse-char in)))
 
 (define (parse-any-char chars in)
@@ -133,6 +140,15 @@
               out
               ((apply parse-or (cdr parser)) in)))
         #f)))
+
+(define (parse-? parser #!optional default)
+  (lambda (in)
+    (let ((out (call-with-parse-stack parser in)))
+      (if out
+          out
+          (if default
+              default
+              '())))))
 
 (define (parse-* recv parser)
   (letrec ((parser-loop (lambda (in)
@@ -177,6 +193,24 @@
           (apply recv ret)))))
 
 ;; Additional parsers
+
+(define (alpha? c)
+  (or
+   (and
+    (char<=? c #\Z)
+    (char>=? c #\A))
+   (and
+    (char<=? c #\z)
+    (char>=? c #\a))))
+
+(define parse-alpha-string
+  (parse-*
+   (lambda expr (list->string expr))
+   (parse-char-func alpha?)))
+
+(define parse-int
+  (parse-* (lambda expr (string->number (list->string expr)))
+           parse-num-char))
 
 (define parse-num
   (parse-sequence (lambda expr

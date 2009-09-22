@@ -27,13 +27,14 @@
                     parse-int))
 
 (define parse-font (parse-sequence
-                    (lambda (font spc str) (make-font str))
+                    (lambda (font spc str size mods) (make-font str size mods))
                     (parse-str "font")
                     parse-space
-                    (parse-not
-                     (parse-or
-                     parse-eat-space-line
-                     parse-eof))))
+                    parse-alpha-string
+                    parse-int
+                    (parse-?
+                     parse-alpha-string
+                     "")))
 
 (define parse-text (parse-sequence
                     (lambda (text spc1 x spc2 y spc3 str) (make-text x y str))

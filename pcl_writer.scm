@@ -16,7 +16,11 @@
     ((font? pcl-type)
      (list
       "font"
-      (get-font-str pcl-type)))
+      (string-append
+       (get-font-str pcl-type)
+       (->string
+        (get-font-size pcl-type))
+       (get-font-mods pcl-type))))
     ((text? pcl-type)
      (list
       "text"

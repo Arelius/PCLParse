@@ -17,9 +17,11 @@
   (width get-line-width))
 
 (define-record-type font
-  (make-font font-str)
+  (make-font font-str pt-size mods)
   font?
-  (font-str get-font-str))
+  (font-str get-font-str)
+  (pt-size get-font-size)
+  (mods get-font-mods))
 
 (define-record-type text
   (make-text x y str)
@@ -76,7 +78,9 @@
     ((and (line-width? l) (line-width? r))
      (> (get-line-width l) (get-line-width r)))
     ((and (font? l) (font? r))
-     (string<? (get-font-str l) (get-font-str r)))
+     (if (= (get-font-size l) (get-font-size r))
+         (< (get-font-size l) (get-font-size r))
+         (string<? (get-font-str l) (get-font-str r))))
     ((and (pcl-coord-obj? l) (pcl-coord-obj? r))
      (let ((ly (pcl-obj-y l))
            (ry (pcl-obj-y r)))
@@ -90,7 +94,9 @@
     ((and (line-width? l) (line-width? r))
      (eq? (get-line-width l) (get-line-width r)))
     ((and (font? l) (font? r))
-     (equal? (get-font-str l) (get-font-str r)))
+     (and (equal? (get-font-str l) (get-font-str r))
+          (equal? (get-font-size l) (get-font-size r))
+          (equal? (get-font-mods l) (get-font-mods r))))
     (else (error (string-append "Comparing two incompatable pcl types:" (->string l) " " (->string r) ".")))))
 
 (define (pcl-discard? l r)
