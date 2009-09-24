@@ -14,9 +14,11 @@
 (define (get-ft-font-face font)
   (let ((face (ft-new-face
                ft-lib
-               (case (get-font-str font)
-                 (("STMS") "/Library/Fonts/Times New Roman.ttf")
-                 (("SARIAL") "/Library/Fonts/Arial.ttf")))))
+               (cond
+                 ((equal? (get-font-str font) "STMS")
+                  "/Library/Fonts/Times New Roman.ttf")
+                 ((equal? (get-font-str font) "SARIAL")
+                  "/Library/Fonts/Arial.ttf")))))
     (ft-set-char-size face 0 (* (get-font-size font) 64) ft-dpi ft-dpi)
     face))
 
@@ -48,4 +50,29 @@
      face)
     string-pp-width))
 
-(pp->cm (ft-get-string-pp-width "Ap" selected-font-face))
+(define (ft-get-string-cm-width string face)
+  (pp->cm (ft-get-string-pp-width string face)))
+
+(define font-close-threshold 0.05)
+
+(define (<> c h l)
+  (and
+   (< c h)
+   (> c l)))
+
+(define (pcl-text-combine? face l r)
+  (and (= (pcl-obj-y l) (pcl-obj-y r))
+       (<>
+        (- (pcl-obj-x r)
+           (pcl-obj-x l)
+           (ft-get-string-cm-width (text-get-str l) face))
+        font-close-threshold
+        (- font-close-threshold))))
+
+(define (pcl-text-do-combine l r)
+  (make-text
+   (text-get-x l)
+   (text-get-y l)
+   (string-append
+    (text-get-str l)
+    (text-get-str r))))

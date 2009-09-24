@@ -1,5 +1,6 @@
 (declare (unit pcl_transform)
-         (uses pcl_types))
+         (uses pcl_types
+               pcl_fontutils))
 
 (require-extension srfi-1)
 ;;(require-extension srfi-32)
@@ -71,6 +72,35 @@
       merge-s)
    lst))
 
+(define (nest-transform-merge-strings lst)
+  (cons
+   (car lst)
+   (cons
+    ((lambda (lst)
+       (map
+        (lambda (lst)
+          (letrec
+              ((merge-strings
+                (lambda (face txt rest)
+                  (cond
+                   ((null? rest)
+                    (list txt))
+                   ((text? (car rest))
+                
+                    (let ((rest-list
+                           (merge-strings face (car rest) (cdr rest))))
+                      (pcl-text-try-combine face txt rest-list)))
+               
+                   (else (error (string-append
+                                 "Unexpected type in string list :"
+                                 (->string rest)))))))
+
+               (ft-face (get-ft-font-face (car lst))))
+            (cons (car lst) (merge-strings ft-face (cadr lst) (cddr lst)))))
+        lst))
+     (cadr lst))
+    (cddr lst))))
+
 ;; This actually requires lines to be sorted longest to shortest, which isn't currentlly done.
 (define (nest-transform-merge-overlapping! lst)
   (map
@@ -112,7 +142,7 @@
       lst))
    lst))
 
-(define nest-transform-func-list (list nest-transform-merge-overlapping! nest-transform-sub-sort nest-transform-remove-empty nest-transform-merge-similar nest-transform-sort))
+(define nest-transform-func-list (list nest-transform-merge-strings nest-transform-merge-overlapping! nest-transform-sub-sort nest-transform-remove-empty nest-transform-merge-similar nest-transform-sort))
 
 
 (define (transform-pcl-list lst)
