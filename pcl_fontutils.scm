@@ -53,26 +53,46 @@
 (define (ft-get-string-cm-width string face)
   (pp->cm (ft-get-string-pp-width string face)))
 
-(define font-close-threshold 0.05)
+(define font-close-threshold 0.04)
 
 (define (<> c h l)
   (and
-   (< c h)
-   (> c l)))
+   (<= c h)
+   (>= c l)))
 
-(define (pcl-text-combine? face l r)
+(define (duplicate x i)
+  (if (= i 0)
+      '()
+      (cons x (duplicate x (- i 1)))))
+
+(define (pcl-text-combine? face l r extra)
   (and (= (pcl-obj-y l) (pcl-obj-y r))
        (<>
         (- (pcl-obj-x r)
            (pcl-obj-x l)
-           (ft-get-string-cm-width (text-get-str l) face))
+           (ft-get-string-cm-width (text-get-str l) face)
+           extra)
         font-close-threshold
         (- font-close-threshold))))
 
-(define (pcl-text-do-combine l r)
+(define (pcl-text-do-combine l r spaces-count)
   (make-text
    (text-get-x l)
    (text-get-y l)
-   (string-append
-    (text-get-str l)
-    (text-get-str r))))
+   (apply
+    string-append
+    (append
+     (list (text-get-str l))
+     (duplicate " " spaces-count)
+     (list (text-get-str r))))))
+
+(define (pcl-text-try-combine face txt rest)
+  (cond ((pcl-text-combine? face txt (car rest) 0)
+         (cons
+          (pcl-text-do-combine txt (car rest) 0)
+          (cdr rest)))
+        ((pcl-text-combine? face txt (car rest) (ft-get-string-cm-width " " face))
+         (cons
+          (pcl-text-do-combine txt (car rest) 1)
+          (cdr rest)))
+        (else (cons txt rest))))
