@@ -30,13 +30,34 @@
                 inches->cm pixels->inches pp->pixels))
 
 (define (iterate-glyph func string face)
-	(for-each
-	 (lambda (c)
-	   (ft-load-char face (char->integer c) FT_LOAD_DEFAULT)
-	   (ft-render-glyph (ft-face-glyph face) FT_RENDER_MODE_NORMAL)
-	   (let ((glyph (ft-face-glyph face)))
-		 (func glyph)))
-	 (string->list string)))
+	(letrec
+        ((iterate
+          (lambda (lst previous-glyph)
+            (if (null? lst)
+                '()
+                (begin
+                  (ft-load-char face (char->integer (car lst)) FT_LOAD_DEFAULT)
+                  (ft-render-glyph (ft-face-glyph face) FT_RENDER_MODE_NORMAL)
+                  (let ((glyph (ft-face-glyph face)))
+                    (cons
+                     (func glyph)
+                     (iterate (cdr lst) glyph))))))))
+	 (iterate
+      (if (string? string)
+          (string->list string)
+          string) #f)))
+
+(define (ft-get-char-pair-kerning-pp-width lchar rchar face)
+  (let* ((Vect (make-ft-vector))
+         (err (ft-get-kerning
+               face
+               (ft-get-char-index face (char->integer lchar))
+               (ft-get-char-index face (char->integer rchar))
+               FT_KERNING_DEFAULT
+               Vect)))
+    (if (eq? 0 err)
+        (ft-vector-x Vect)
+        0)))
 
 (define (ft-get-string-pp-width string face)
   (let ((string-pp-width 0))
@@ -49,6 +70,22 @@
      string
      face)
     string-pp-width))
+
+
+(define (ft-get-strings-kerning-pp-width face . rest)
+  (letrec ((char-list (apply
+                       append
+                       (map
+                        string->list
+                        rest)))
+           (get-kerning
+            (lambda (char rest)
+              (+
+               (ft-get-char-pair-kerning-pp-width char rest face)
+               (if (null? rest)
+                   0
+                   (get-kerning (car rest) (cdr rest)))))))
+    (get-kerning (car char-list) (cdr char-list))))
 
 (define (ft-get-string-cm-width string face)
   (pp->cm (ft-get-string-pp-width string face)))
@@ -71,6 +108,9 @@
         (- (pcl-obj-x r)
            (pcl-obj-x l)
            (ft-get-string-cm-width (text-get-str l) face)
+           (ft-get-strings-kerning-pp-width face
+                                            (text-get-str l)
+                                            (string-take (text-get-str r) 1))
            extra)
         font-close-threshold
         (- font-close-threshold))))
