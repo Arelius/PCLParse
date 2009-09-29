@@ -16,11 +16,25 @@
                ft-lib
                (cond
                  ((equal? (get-font-str font) "STMS")
-                  ;;"/Users/Indy/dev/imm/PCLParse/LiberationSans-Regular.ttf"
-                  "/Library/Fonts/Times New Roman.ttf")
+                  (cond
+                   ((equal? (get-font-mods font) "B")
+                    "/Library/Fonts/Times New Roman Bold.ttf")
+                   ((equal? (get-font-mods font) "I")
+                    "/Library/Fonts/Times New Roman Italic.ttf")
+                   ((equal? (get-font-mods font) "BI")
+                    "/Library/Fonts/Times New Roman Bold Italic.ttf")
+                   (else
+                    "/Library/Fonts/Times New Roman.ttf")))
                  ((equal? (get-font-str font) "SARIAL")
-                  ;;"/Users/Indy/dev/imm/PCLParse/LiberationSerif-Regular.ttf"
-                  "/Library/Fonts/Arial.ttf")))))
+                  (cond
+                   ((equal? (get-font-mods font) "B")
+                    "/Library/Fonts/Arial Bold.ttf")
+                   ((equal? (get-font-mods font) "I")
+                    "/Library/Fonts/Arial Italic.ttf")
+                   ((equal? (get-font-mods font) "BI")
+                    "/Library/Fonts/Arial Bold Italic.ttf")
+                   (else
+                    "/Library/Fonts/Arial.ttf")))))))
     ;; (print (string-append "Kerning:" (->string (ft-has-kerning? face))))
     (ft-set-char-size face 0 (* (get-font-size font) 64) ft-dpi ft-dpi)
     face))
