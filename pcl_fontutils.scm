@@ -16,9 +16,12 @@
                ft-lib
                (cond
                  ((equal? (get-font-str font) "STMS")
+                  ;;"/Users/Indy/dev/imm/PCLParse/LiberationSans-Regular.ttf"
                   "/Library/Fonts/Times New Roman.ttf")
                  ((equal? (get-font-str font) "SARIAL")
+                  ;;"/Users/Indy/dev/imm/PCLParse/LiberationSerif-Regular.ttf"
                   "/Library/Fonts/Arial.ttf")))))
+    ;; (print (string-append "Kerning:" (->string (ft-has-kerning? face))))
     (ft-set-char-size face 0 (* (get-font-size font) 64) ft-dpi ft-dpi)
     face))
 
@@ -55,7 +58,7 @@
                (ft-get-char-index face (char->integer rchar))
                FT_KERNING_DEFAULT
                Vect)))
-    (if (eq? 0 err)
+    (if (= 0 err)
         (ft-vector-x Vect)
         0)))
 
@@ -80,17 +83,20 @@
                         rest)))
            (get-kerning
             (lambda (char rest)
-              (+
-               (ft-get-char-pair-kerning-pp-width char rest face)
-               (if (null? rest)
-                   0
+              (if (null? rest)
+                  0
+                  (+
+                   (ft-get-char-pair-kerning-pp-width char (car rest) face)
                    (get-kerning (car rest) (cdr rest)))))))
     (get-kerning (car char-list) (cdr char-list))))
+
+(define (ft-get-strings-kerning-cm-width face . rest)
+  (pp->cm (apply ft-get-strings-kerning-pp-width (cons face rest))))
 
 (define (ft-get-string-cm-width string face)
   (pp->cm (ft-get-string-pp-width string face)))
 
-(define font-close-threshold 0.04)
+(define font-close-threshold 0.05)
 
 (define (<> c h l)
   (and
@@ -103,12 +109,28 @@
       (cons x (duplicate x (- i 1)))))
 
 (define (pcl-text-combine? face l r extra)
+  (print "combine?")
+  (print (string-append (text-get-str l) ":" (text-get-str r)))
+  ;; (print extra)
+  ;; (print (pcl-obj-x l))
+  ;; (print (pcl-obj-x r))
+  ;; (print (ft-get-string-cm-width (text-get-str l) face))
+  ;; (print (ft-get-strings-kerning-cm-width face
+  ;;                                         (text-get-str l)
+  ;;                                         (string-take (text-get-str r) 1)))
+  (print (- (pcl-obj-x r)
+           (pcl-obj-x l)
+           (ft-get-string-cm-width (text-get-str l) face)
+           (ft-get-strings-kerning-cm-width face
+                                            (text-get-str l)
+                                            (string-take (text-get-str r) 1))
+           extra))
   (and (= (pcl-obj-y l) (pcl-obj-y r))
        (<>
         (- (pcl-obj-x r)
            (pcl-obj-x l)
            (ft-get-string-cm-width (text-get-str l) face)
-           (ft-get-strings-kerning-pp-width face
+           (ft-get-strings-kerning-cm-width face
                                             (text-get-str l)
                                             (string-take (text-get-str r) 1))
            extra)
