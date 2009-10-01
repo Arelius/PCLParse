@@ -36,18 +36,40 @@
                      parse-alpha-string
                      "")))
 
-(define parse-text (parse-sequence
-                    (lambda (text spc1 x spc2 y spc3 str) (make-text x y str))
-                    (parse-str "text")
-                    parse-space
-                    parse-num
-                    parse-space
-                    parse-num
-                    parse-space
-                    (parse-not (parse-or
-                                parse-eof
-                                (parse-a-char #\return)
-                                (parse-a-char #\newline)))))
+(define parse-length-text
+  (parse-sequence
+   (lambda (text spc1 x spc2 y spc3 l spc4 str) (make-text x y str l))
+   (parse-str "textl")
+   parse-whitespace
+   parse-num
+   parse-whitespace
+   parse-num
+   parse-whitespace
+   parse-num
+   parse-whitespace
+   (parse-not (parse-or
+               parse-eof
+               (parse-a-char #\return)
+               (parse-a-char #\newline)))))
+
+(define parse-text-reg
+  (parse-sequence
+   (lambda (text spc1 x spc2 y spc3 str) (make-text x y str #f))
+   (parse-str "text")
+   parse-space
+   parse-num
+   parse-space
+   parse-num
+   parse-space
+   (parse-not (parse-or
+               parse-eof
+               (parse-a-char #\return)
+               (parse-a-char #\newline)))))
+
+(define parse-text
+  (parse-or
+   parse-text-reg
+   parse-length-text))
 
 (define parse-box (parse-sequence
                    (lambda (box spc1 x1 spc2 y1 spc3 x2 spc4 y2) (make-box x1 y1 x2 y2))

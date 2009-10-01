@@ -24,11 +24,12 @@
   (mods get-font-mods))
 
 (define-record-type text
-  (make-text x y str)
+  (make-text x y str width)
   text?
   (x text-get-x)
   (y text-get-y)
-  (str text-get-str))
+  (str text-get-str)
+  (width text-get-width))
 
 (define-record-type box
   (make-box x1 y1 x2 y2)

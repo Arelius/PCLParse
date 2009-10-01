@@ -110,7 +110,8 @@
 (define (ft-get-string-cm-width string face)
   (pp->cm (ft-get-string-pp-width string face)))
 
-(define font-close-threshold 0.05)
+(define font-close-threshold 0.02)
+(define font-overlap-threshold -0.3)
 
 (define (<> c h l)
   (and
@@ -123,33 +124,19 @@
       (cons x (duplicate x (- i 1)))))
 
 (define (pcl-text-combine? face l r extra)
-  (print "combine?")
-  (print (string-append (text-get-str l) ":" (text-get-str r)))
-  ;; (print extra)
-  ;; (print (pcl-obj-x l))
-  ;; (print (pcl-obj-x r))
-  ;; (print (ft-get-string-cm-width (text-get-str l) face))
-  ;; (print (ft-get-strings-kerning-cm-width face
-  ;;                                         (text-get-str l)
-  ;;                                         (string-take (text-get-str r) 1)))
-  (print (- (pcl-obj-x r)
-           (pcl-obj-x l)
-           (ft-get-string-cm-width (text-get-str l) face)
-           (ft-get-strings-kerning-cm-width face
-                                            (text-get-str l)
-                                            (string-take (text-get-str r) 1))
-           extra))
   (and (= (pcl-obj-y l) (pcl-obj-y r))
        (<>
         (- (pcl-obj-x r)
            (pcl-obj-x l)
-           (ft-get-string-cm-width (text-get-str l) face)
-           (ft-get-strings-kerning-cm-width face
-                                            (text-get-str l)
-                                            (string-take (text-get-str r) 1))
-           extra)
-        font-close-threshold
-        (- font-close-threshold))))
+           (if (text-get-width l)
+               (text-get-width l)
+               (+
+                (ft-get-string-cm-width (text-get-str l) face)
+                (ft-get-strings-kerning-cm-width face
+                                                 (text-get-str l)
+                                                 (string-take (text-get-str r) 1)))))
+        (+ extra font-close-threshold)
+        (- font-overlap-threshold extra))))
 
 (define (pcl-text-do-combine l r spaces-count)
   (make-text
@@ -160,7 +147,8 @@
     (append
      (list (text-get-str l))
      (duplicate " " spaces-count)
-     (list (text-get-str r))))))
+     (list (text-get-str r))))
+   #f))
 
 (define (pcl-text-try-combine face txt rest)
   (cond ((pcl-text-combine? face txt (car rest) 0)
