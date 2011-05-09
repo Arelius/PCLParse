@@ -2,8 +2,6 @@
 
 (define pcl-in (list-ref (command-line-arguments) 0))
 (define pcl-out (list-ref (command-line-arguments) 1))
-;(define pcl-in "I134A.pcl")
-;(define pcl-out "TI134A.pcl")
 
 (define pcl-stream (parse-pcl-file pcl-in))
 
