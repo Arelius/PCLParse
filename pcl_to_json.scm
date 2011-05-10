@@ -1,4 +1,5 @@
 (require-extension json)
+(require-extension srfi-13)
 
 (declare (uses parse pcl_parser pcl_types))
 
@@ -7,6 +8,27 @@
 
 (define pcl-stream (parse-pcl-file pcl-in))
 
+(define (pcl-font->family font)
+  (cond
+   ((equal? font "STMS")
+    "Times New Roman")
+   ((equal? font "SARIAL")
+    "Arial")
+   (default
+     (display "Unrecogonized font.")
+     "Times New Roman")))
+
+(define (pcl-font-modifiers->font-style style)
+  (string-join
+   (list
+    (if (string-any #\B style)
+        "Bold"
+        "")
+    (if (string-any #\I style)
+        "Italic"
+        ""))
+   " " 'infix))
+
 (define (pcl-type->json-item pcl-type)
   (list->vector
    (cond
@@ -14,15 +36,15 @@
      `((element . ,(get-line-type pcl-type))
        (x . ,(get-line-x pcl-type))
        (y . ,(get-line-y pcl-type))
-       (len . ,(get-line-len pcl-type))))
+       (length . ,(get-line-len pcl-type))))
     ((line-width? pcl-type)
      `((element . lwid)
        (width . ,(get-line-width pcl-type))))
     ((font? pcl-type)
      `((element . font)
-       (family . ,(get-font-str pcl-type))
+       (family . ,(pcl-font->family (get-font-str pcl-type)))
        (size . ,(get-font-size pcl-type))
-       (modifiers . ,(get-font-mods pcl-type))))
+       (modifiers . ,(pcl-font-modifiers->font-style (get-font-mods pcl-type)))))
     ((text? pcl-type)
      `((element . text)
        (x . ,(text-get-x pcl-type))
