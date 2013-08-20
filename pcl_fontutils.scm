@@ -7,34 +7,41 @@
 
 (define ft-dpi 300)
 
+(define (ttf-font-path name)
+  (string-append "/Library/Fonts/" name ".ttf"))
+
+(define (ttf-font-path name)
+  (string-append "./Fonts/" name ".ttf"))
+
 ;;(define selected-font-face (ft-new-face ft-lib "/Library/Fonts/Times New Roman.ttf"))
-(define selected-font-face (ft-new-face ft-lib "/Library/Fonts/Arial.ttf"))
+(define selected-font-face (ft-new-face ft-lib (ttf-font-path "Arial")))
 (ft-set-char-size selected-font-face 0 (* 10 64) ft-dpi ft-dpi)
 
 (define (get-ft-font-face font)
   (let ((face (ft-new-face
                ft-lib
-               (cond
+               (ttf-font-path
+                (cond
                  ((equal? (get-font-str font) "STMS")
                   (cond
                    ((equal? (get-font-mods font) "B")
-                    "/Library/Fonts/Times New Roman Bold.ttf")
+                    "Times New Roman Bold")
                    ((equal? (get-font-mods font) "I")
-                    "/Library/Fonts/Times New Roman Italic.ttf")
+                    "Times New Roman Italic")
                    ((equal? (get-font-mods font) "BI")
-                    "/Library/Fonts/Times New Roman Bold Italic.ttf")
+                    "Times New Roman Bold Italic")
                    (else
-                    "/Library/Fonts/Times New Roman.ttf")))
+                    "Times New Roman")))
                  ((equal? (get-font-str font) "SARIAL")
                   (cond
                    ((equal? (get-font-mods font) "B")
-                    "/Library/Fonts/Arial Bold.ttf")
+                    "Arial Bold")
                    ((equal? (get-font-mods font) "I")
-                    "/Library/Fonts/Arial Italic.ttf")
+                    "Arial Italic")
                    ((equal? (get-font-mods font) "BI")
-                    "/Library/Fonts/Arial Bold Italic.ttf")
+                    "Arial Bold Italic")
                    (else
-                    "/Library/Fonts/Arial.ttf")))))))
+                    "Arial"))))))))
     ;; (print (string-append "Kerning:" (->string (ft-has-kerning? face))))
     (ft-set-char-size face 0 (* (get-font-size font) 64) ft-dpi ft-dpi)
     face))
