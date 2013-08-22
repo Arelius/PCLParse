@@ -22,7 +22,7 @@
                         (if (or (null? lst) ((car state) (car lst)))
                             '()
                             (let ([match (find true?
-                                               (map 
+                                               (map
                                                 (lambda (f)
                                                   (if (f (car lst)) (car lst) #f))
                                                 (cdr state)))])
@@ -32,8 +32,8 @@
               (extract-state-children state (cdr lst))))
             (extract-state-nest state (cdr lst)))
           (extract-state-nest state (cdr lst)))))
-           
-                             
+
+
 
 (define (nest-pcl-list lst)
   (map (lambda (state) (extract-state-nest state lst)) nest-tree))
@@ -86,11 +86,11 @@
                    ((null? rest)
                     (list txt))
                    ((text? (car rest))
-                
+
                     (let ((rest-list
                            (merge-strings face (car rest) (cdr rest))))
                       (pcl-text-try-combine face txt rest-list)))
-               
+
                    (else (error (string-append
                                  "Unexpected type in string list :"
                                  (->string rest)))))))
@@ -150,4 +150,3 @@
    ((apply compose nest-transform-func-list)
     (nest-pcl-list
      ((apply compose transform-func-list) lst)))))
-      

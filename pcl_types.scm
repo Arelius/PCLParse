@@ -23,6 +23,13 @@
   (pt-size get-font-size)
   (mods get-font-mods))
 
+(define (get-font-expanded-str pcl-type)
+  (string-append
+   (get-font-str pcl-type)
+   (->string
+    (get-font-size pcl-type))
+   (get-font-mods pcl-type)))
+
 (define-record-type text
   (make-text x y str width)
   text?
@@ -80,8 +87,8 @@
      (> (get-line-width l) (get-line-width r)))
     ((and (font? l) (font? r))
      (if (= (get-font-size l) (get-font-size r))
-         (< (get-font-size l) (get-font-size r))
-         (string<? (get-font-str l) (get-font-str r))))
+         (string<? (get-font-expanded-str l) (get-font-expanded-str r))
+         (< (get-font-size l) (get-font-size r))))
     ((and (pcl-coord-obj? l) (pcl-coord-obj? r))
      (let ((ly (pcl-obj-y l))
            (ry (pcl-obj-y r)))
